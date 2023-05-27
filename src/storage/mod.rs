@@ -1,6 +1,8 @@
 use serde::{Serialize, Deserialize};
-use serde_json::Value;
+use serde_json::{ Value, Error as SerdeError };
 use exceptions::{StorageError, ErrorType};
+use std::fs;
+use std::io;
 
 enum Namespace {
     Slot,
@@ -52,7 +54,24 @@ struct Storage {
 
 impl Storage {
 
-    pub fn new(location: &str) -> Result<Storage>  {
+    pub fn new(path: &str) -> Result<Storage, StorageError>  {
+        let a = File::open(path);
+        if let Err(e) = z {
+            return Err(StorageError {
+                type: ErrorType::File(path),
+                message: format!("Unable to read file with path {path}!")
+            });
+        }
+        let b: Value = serde_json::from_reader(a);
+        if let Err(e) = b {
+            return Err(StorageError {
+                type: ErrorType::Json,
+                message: format!("Unable to deserialise JSON with file path {path}!")
+            });
+        }
+        Storage {
+            parsed_data: b
+        }
     }
 
     pub fn write_object<T>(&mut self, object: T) -> T 
@@ -60,6 +79,7 @@ impl Storage {
         T: ?Sized + Serialize + Identifiable,
     {
     // Assign id + spit out new version of the object
+    ()
     }
 
     pub fn get_object<T, G>(&self, object: &T) -> G 
@@ -68,6 +88,7 @@ impl Storage {
         G: Deserialize + Identifiable + ?Sized
     {
     // Deserialize on return!
+    ()
     }
 
     pub fn delete_object<T>(&mut self, object: T) 

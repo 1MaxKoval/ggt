@@ -1,7 +1,8 @@
 use std::fmt;
 
 pub enum ErrorType {
-    FileError,
+    File(&str), // file path
+    Json, 
 }
 
 #[derive(Debug, Clone)]
