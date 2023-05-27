@@ -1,6 +1,11 @@
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
 
+enum Namespace {
+    Slot,
+    Task,
+}
+
 trait Identifiable {
     fn get_id(&self) -> usize;
     fn set_id(&mut self, id: usize);
@@ -11,7 +16,7 @@ trait Identifiable {
 #[derive(Serialize, Deserialize)]
 struct Slot {
     id: usize,
-    namespace: &str,
+    namespace: Namespace::Slot,
     topic_ids: Vec<usize>,
     start_time: String,
     end_time: String
@@ -27,7 +32,7 @@ impl Identifiable for Slot {
 #[derive(Serialize, Deserialize)]
 struct Topic {
     id: usize,
-    namespace: &str,
+    namespace: Namespace::Topic,
     name: String,
     desrciption: String
 }
@@ -56,18 +61,20 @@ impl Storage {
     // Assign id + spit out new version of the object
     }
 
-    pub fn get_object<T: ?Sized + Deserialize + Identifiable>(&self, object: T) -> T 
+    pub fn get_object<T, G>(&self, object: &T) -> G 
     where
-        T: ?Sized + Deserialize + Identifiable
+        T: Identifiable,
+        G: Deserialize + Identifiable + ?Sized
     {
     // Deserialize on return!
     }
 
-    pub fn delete_object(&mut self, object: T) 
+    pub fn delete_object<T>(&mut self, object: T) 
     where
-        T: ?Sized + Identifiable
+        T: Identifiable
     {
     // Throw error?
+    // What if a topic gets deleted?
     }
 
 }
