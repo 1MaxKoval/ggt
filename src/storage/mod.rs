@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
+use exceptions::{StorageError, ErrorType};
 
 enum Namespace {
     Slot,
@@ -51,7 +52,7 @@ struct Storage {
 
 impl Storage {
 
-    pub fn new(location: &str) -> Storage {
+    pub fn new(location: &str) -> Result<Storage>  {
     }
 
     pub fn write_object<T>(&mut self, object: T) -> T 
