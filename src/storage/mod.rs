@@ -6,11 +6,6 @@ use exceptions::{StorageError, ErrorType};
 use std::fs::File;
 use std::io;
 
-enum Namespace {
-    Slot,
-    Task,
-}
-
 trait Identifiable {
     fn get_id(&self) -> usize;
     fn set_id(&mut self, id: usize);
