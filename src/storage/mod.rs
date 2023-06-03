@@ -5,6 +5,7 @@ use serde_json::{ Value };
 use exceptions::{StorageError, ErrorType};
 use std::fs::File;
 use std::io;
+use std::collections::HashMap;
 
 trait Identifiable {
     fn get_id(&self) -> usize;
@@ -39,8 +40,15 @@ impl Identifiable for Topic {
     fn get_namespace(&self) -> &str { "Topic" }
 }
 
+#[derive(Serialize, Deserialize)]
+struct Config {
+    id_pools: HashMap<String, Vec<Vec<usize>>>
+}
+
+#[derive(Serialize, Deserialize)]
 struct Storage {
-    parsed_data: Value
+    config: Config,
+    data: HashMap<String, Value>
 }
 
 struct Query {
@@ -50,13 +58,13 @@ struct Query {
 
 impl Storage {
 
-    pub fn new(path: String) -> Result<Storage, StorageError>  {
+    pub fn from(path: &str) -> Result<Storage, StorageError>  {
         let reader_result = File::open(&path);
         let reader = match reader_result {
             Ok(a) => a,
             Err(err) => {
                 return Err(StorageError {
-                    kind: ErrorType::File(path.clone()),
+                    kind: ErrorType::File(String::from(path)),
                     message: format!("Unable to read file with path {path}!")
                 });
             }
@@ -71,22 +79,23 @@ impl Storage {
                 });
             }
         };
-        Ok(Storage {
-            parsed_data: json_value
-        })
+        let storage: Storage = json_value;
+        Ok(storage)
     }
 
-    pub fn add_object<T>(&mut self, object: T)
+    fn get_unused_id(namespace: &str) -> usize {
+        3
+    } 
+    
+    pub fn add_object<T>(&mut self, object: T) -> Value //TODO: Change the return to type to generic for better abstraction!
     where
         T: Serialize + Identifiable,
     {
-    // Assign id + spit out new version of the object
+        
     }
 
-    pub fn get_object<G>(&self, query: &Query) -> Value  {
-    // Deserialize on return or throw!
-    // TODO: Update error handling and add proper deserialization once learnt!
-    // Dont know how to implement a generic method for deserialization!
+    pub fn get_object<G>(&self, query: &Query) -> Value { //TODO: Change the return to type to generic for better abstraction!
+
     }
 
     pub fn delete_object<T>(&mut self, query: &Query) {
@@ -95,3 +104,20 @@ impl Storage {
     }
 
 }
+
+fn indx<'a, 'b>(a: &'a Value, s: &'b str) -> Result<Value, StorageError> {
+    match a[s] {
+        Value::Null => {
+            return Err(StorageError {
+                kind: ErrorType::Json,
+                message: format!("Could not index into JSON object with key {s}!")
+            });
+        },
+        _ => {
+            return Ok(a[s]);
+        }
+    };
+}
+
+
+
