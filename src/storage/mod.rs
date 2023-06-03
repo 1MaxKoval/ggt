@@ -1,15 +1,14 @@
 mod exceptions;
 
 use serde::{Serialize, Deserialize};
-use serde_json::{ Value };
+use serde_json::{ Value, to_value };
 use exceptions::{StorageError, ErrorType};
 use std::fs::File;
-use std::io;
 use std::collections::HashMap;
 
 trait Identifiable {
-    fn get_id(&self) -> usize;
-    fn set_id(&mut self, id: usize);
+    fn get_id(&self) -> Option<usize>;
+    fn set_id(&mut self, id: Option<usize>);
     fn get_namespace(&self) -> &str;
 }
 
@@ -83,15 +82,47 @@ impl Storage {
         Ok(storage)
     }
 
-    fn get_unused_id(namespace: &str) -> usize {
-        3
+    fn save(&self) {
+    }
+
+    fn assign_unused_id(&mut self, namespace: &str) -> usize {
+        // Finish this func!
+        let pools = self.config.id_pools[namespace];
+        if pools.len() == 0 {
+            pools.push(vec![0]);
+            return 0;
+        }
+        if pools[0][0] != 0 {
+            pools[0]
+            return 0
+        }
+        let c: usize = 0;
+        for elem in pools {
+
+        }
     } 
     
-    pub fn add_object<T>(&mut self, object: T) -> Value //TODO: Change the return to type to generic for better abstraction!
+    pub fn add_object<T>(&mut self, object: T) -> Result<Value, StorageError> //TODO: Change the return to type to generic for better abstraction!
     where
-        T: Serialize + Identifiable,
+        T: Serialize + Identifiable, // + Deserialize later
     {
-        
+        let namespace = object.get_namespace();
+        match object.get_id() {
+            Some(i) => {
+               // update object
+                let Ok(v) = to_value(object) else {
+                    return Err(StorageError { 
+                        kind: ErrorType::Json, 
+                        message: format!("Unable to serialise JSON object being added \"{namespace}\" namespace").to_string()
+                    })
+                };
+                self.data[namespace][i] = v;
+                Ok(self.data[namespace][i])
+             },
+            None => {
+
+            }
+        }
     }
 
     pub fn get_object<G>(&self, query: &Query) -> Value { //TODO: Change the return to type to generic for better abstraction!
