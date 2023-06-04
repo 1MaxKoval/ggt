@@ -1,10 +1,11 @@
 mod exceptions;
 
 use serde::{Serialize, Deserialize};
-use serde_json::{ Value, to_value };
+use serde_json::{Value, to_value};
 use exceptions::{StorageError, ErrorType};
 use std::fs::File;
 use std::collections::HashMap;
+use std::ops::{Index, IndexMut};
 
 trait Identifiable {
     fn get_id(&self) -> Option<usize>;
@@ -39,9 +40,67 @@ impl Identifiable for Topic {
     fn get_namespace(&self) -> &str { "Topic" }
 }
 
+struct RangedTuple {
+    bound: Vec<usize>
+}
+
+impl RangedTuple {
+
+    fn new(a: Vec<usize>) -> RangedTuple {
+        match a.len() {
+            1 | 2 => return RangedTuple { bound: a },
+            _ => panic!("Ranged tuple can only be initialised to a vec of size 1 or 2!")
+        }
+    }
+
+    fn upper(&self) -> usize {
+        match self.bound.len() {
+            1 => return self.bound[0],
+            2 => return self.bound[1],
+            _ => panic!("Uknown state for RangedTuple, exiting..."),
+        }
+    }
+
+    fn rm_upper(&mut self)  {
+        if self.bound.len() == 2 {
+            self.bound.pop();
+        }
+        panic!("Unable to remove an upper bound while being a unit tuple");
+    }
+
+    fn set_upper(&mut self, i: usize) {
+        if self.bound.len() == 1 {
+            self.bound.push(i);
+        }
+    }
+
+    fn lower(&self) -> usize {
+        match self.bound.len() {
+            1 | 2 => return self.bound[0],
+            _ => panic!("Uknown state for RangedTuple, exiting..."),
+        }
+    }
+
+    fn rm_lower(&mut self) {
+        if self.bound.len() == 2 {
+            self.bound.pop();
+            return;
+        }
+        panic!("Unable to remove a lower bound while being a unit tuple");
+    }
+
+    fn set_lower(&mut self, i: usize) {
+        if self.bound.len() == 1 {
+            self.bound.push(i);
+        }
+    }
+
+
+}
+
 #[derive(Serialize, Deserialize)]
 struct Config {
-    id_pools: HashMap<String, Vec<Vec<usize>>>
+    id_pools: HashMap<String, Vec<Vec<usize>>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -85,20 +144,19 @@ impl Storage {
     fn save(&self) {
     }
 
-    fn assign_unused_id(&mut self, namespace: &str) -> usize {
-        // Finish this func!
+    fn deallocate_id()
+
+    fn allocate_id(&mut self, namespace: &str) -> usize {
+        // #TODO: This will break if vec.len() > usize
         let pools = self.config.id_pools[namespace];
         if pools.len() == 0 {
             pools.push(vec![0]);
             return 0;
         }
-        if pools[0][0] != 0 {
-            pools[0]
-            return 0
-        }
-        let c: usize = 0;
+        // Ensure that c is the first lower bound
+        let c: Vec<usize>;
         for elem in pools {
-
+            
         }
     } 
     
