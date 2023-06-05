@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
 pub struct DynamicTup {
     bound: Vec<usize>
 }
@@ -10,6 +13,8 @@ impl DynamicTup {
             _ => panic!("Ranged tuple can only be initialised to a vec of size 1 or 2!")
         }
     }
+
+    pub fn len(&self) -> usize { self.bound.len() }
 
     pub fn upper(&self) -> usize {
         match self.bound.len() {

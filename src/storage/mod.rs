@@ -1,11 +1,12 @@
 mod exceptions;
+mod dynamic_tup;
 
 use serde::{Serialize, Deserialize};
 use serde_json::{Value, to_value};
 use exceptions::{StorageError, ErrorType};
+use dynamic_tup::DynamicTup;
 use std::fs::File;
 use std::collections::HashMap;
-use std::ops::{Index, IndexMut};
 
 trait Identifiable {
     fn get_id(&self) -> Option<usize>;
@@ -40,67 +41,10 @@ impl Identifiable for Topic {
     fn get_namespace(&self) -> &str { "Topic" }
 }
 
-struct RangedTuple {
-    bound: Vec<usize>
-}
-
-impl RangedTuple {
-
-    fn new(a: Vec<usize>) -> RangedTuple {
-        match a.len() {
-            1 | 2 => return RangedTuple { bound: a },
-            _ => panic!("Ranged tuple can only be initialised to a vec of size 1 or 2!")
-        }
-    }
-
-    fn upper(&self) -> usize {
-        match self.bound.len() {
-            1 => return self.bound[0],
-            2 => return self.bound[1],
-            _ => panic!("Uknown state for RangedTuple, exiting..."),
-        }
-    }
-
-    fn rm_upper(&mut self)  {
-        if self.bound.len() == 2 {
-            self.bound.pop();
-        }
-        panic!("Unable to remove an upper bound while being a unit tuple");
-    }
-
-    fn set_upper(&mut self, i: usize) {
-        if self.bound.len() == 1 {
-            self.bound.push(i);
-        }
-    }
-
-    fn lower(&self) -> usize {
-        match self.bound.len() {
-            1 | 2 => return self.bound[0],
-            _ => panic!("Uknown state for RangedTuple, exiting..."),
-        }
-    }
-
-    fn rm_lower(&mut self) {
-        if self.bound.len() == 2 {
-            self.bound.pop();
-            return;
-        }
-        panic!("Unable to remove a lower bound while being a unit tuple");
-    }
-
-    fn set_lower(&mut self, i: usize) {
-        if self.bound.len() == 1 {
-            self.bound.push(i);
-        }
-    }
-
-
-}
 
 #[derive(Serialize, Deserialize)]
 struct Config {
-    id_pools: HashMap<String, Vec<Vec<usize>>>,
+    id_pools: HashMap<String, Vec<DynamicTup>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -141,23 +85,47 @@ impl Storage {
         Ok(storage)
     }
 
-    fn save(&self) {
-    }
+    fn save(&self) {}
 
-    fn deallocate_id()
+    fn deallocate_id() {}
 
     fn allocate_id(&mut self, namespace: &str) -> usize {
         // #TODO: This will break if vec.len() > usize
         let pools = self.config.id_pools[namespace];
-        if pools.len() == 0 {
-            pools.push(vec![0]);
+        let l = pools.len();
+        if l == 0 {
+            pools.push(DynamicTup::new(vec![0]));
             return 0;
         }
         // Ensure that c is the first lower bound
-        let c: Vec<usize>;
-        for elem in pools {
-            
+        let mut to_remove: Vec<usize> = vec![];
+        for (i, x) in pools.iter().enumerate() {
+            match i {
+                0 => {
+                    if x.lower() != 0 {
+                        x.set_lower(x.lower() - 1);
+                        return x.lower();
+                    }
+                },
+                (l - 1) => {
+                    if x.upper() != usize::MAX {
+                        x.set_upper(x.upper() + 1); 
+                        return x.upper();
+                    }
+                },
+                _ => {
+                    let n = pools[i + 1];
+                    let d = n.lower() - x.upper();
+                    if d > 1 {
+                        x.set_upper(x.upper() + 1);
+                        return x.upper();
+                    } 
+                    x.set_upper(n.upper());
+                    // TODO: Remove the array that follows! Deleting from an array while iterating through it hmmmm
+                }
+            }
         }
+        panic!("Something went wrong!");
     } 
     
     pub fn add_object<T>(&mut self, object: T) -> Result<Value, StorageError> //TODO: Change the return to type to generic for better abstraction!
